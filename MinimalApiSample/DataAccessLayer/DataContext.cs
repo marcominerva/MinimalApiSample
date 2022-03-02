@@ -1,10 +1,15 @@
 ﻿using System.Reflection;
 using Microsoft.EntityFrameworkCore;
+using MinimalApiSample.DataAccessLayer.Entities;
 
 namespace MinimalApiSample.DataAccessLayer;
 
 public class DataContext : DbContext
 {
+    public DbSet<Person> People { get; set; }
+
+    public DbSet<Product> Products { get; set; }
+
     public DataContext(DbContextOptions<DataContext> options) : base(options)
     {
     }
