@@ -15,6 +15,7 @@ public class PeoplePhotoHandler
 
         app.MapPut("/api/people/{id:guid}/photo", UpdatePhotoAsync)
             .WithName("UpdatePhoto")
+            .Accepts<IFormFile>("multipart/form-data")
             .Produces(StatusCodes.Status204NoContent)
             .Produces(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status404NotFound);
