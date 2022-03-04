@@ -1,2 +1,2 @@
-# MinimalApiSample
+# Minimal API Sample
 A sample of advanced use of Minimal APIs
