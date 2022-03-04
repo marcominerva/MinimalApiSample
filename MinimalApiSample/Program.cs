@@ -194,10 +194,10 @@ app.MapGet("/api/products", async ([FromQuery(Name = "q")] string searchText, Da
         query = query.Where(p => p.Name.Contains(searchText));
     }
 
-    var people = await query.OrderBy(p => p.Name)
+    var products = await query.OrderBy(p => p.Name)
         .Select(p => p.ToDto()).ToListAsync();
 
-    return Results.Ok(people);
+    return Results.Ok(products);
 })
 .WithName("GetProducts")
 .Produces(StatusCodes.Status200OK, typeof(IEnumerable<Product>));
@@ -210,8 +210,8 @@ app.MapGet("/api/products/{id:guid}", async (Guid id, DataContext dataContext) =
         return Results.NotFound();
     }
 
-    var person = dbProduct.ToDto();
-    return Results.Ok(person);
+    var product = dbProduct.ToDto();
+    return Results.Ok(product);
 })
 .WithName("GetProduct")
 .Produces(StatusCodes.Status200OK, typeof(Product))
