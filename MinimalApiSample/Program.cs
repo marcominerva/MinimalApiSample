@@ -25,7 +25,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.MapGet("/api/people", async ([FromQueryAttribute(Name = "q")] string searchText, DataContext dataContext) =>
+app.MapGet("/api/people", async ([FromQuery(Name = "q")] string searchText, DataContext dataContext) =>
 {
     var query = dataContext.People.AsNoTracking().AsQueryable();
 
@@ -185,7 +185,7 @@ app.MapDelete("/api/people/{id:guid}/photo", async (Guid id, DataContext dataCon
 .Produces(StatusCodes.Status204NoContent)
 .Produces(StatusCodes.Status404NotFound);
 
-app.MapGet("/api/products", async ([FromQueryAttribute(Name = "q")] string searchText, DataContext dataContext) =>
+app.MapGet("/api/products", async ([FromQuery(Name = "q")] string searchText, DataContext dataContext) =>
 {
     var query = dataContext.Products.AsNoTracking().AsQueryable();
 
