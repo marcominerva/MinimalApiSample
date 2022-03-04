@@ -11,28 +11,28 @@ public class ProductsHandler
 {
     public void MapEndpoints(IEndpointRouteBuilder app)
     {
-        app.MapGet("/api/people", GetListAsync)
-            .WithName("GetPeople")
-            .Produces(StatusCodes.Status200OK, typeof(IEnumerable<Person>));
+        app.MapGet("/api/products", GetListAsync)
+            .WithName("GetProducts")
+            .Produces(StatusCodes.Status200OK, typeof(IEnumerable<Product>));
 
-        app.MapGet("/api/people/{id:guid}", GetAsync)
-            .WithName("GetPerson")
-            .Produces(StatusCodes.Status200OK, typeof(Person))
+        app.MapGet("/api/products/{id:guid}", GetAsync)
+            .WithName("GetProduct")
+            .Produces(StatusCodes.Status200OK, typeof(Product))
             .Produces(StatusCodes.Status404NotFound);
 
-        app.MapPost("/api/people", InsertAsync)
-            .WithName("InsertPerson")
-            .Produces(StatusCodes.Status201Created, typeof(Person))
+        app.MapPost("/api/products", InsertAsync)
+            .WithName("InsertProduct")
+            .Produces(StatusCodes.Status201Created, typeof(Product))
             .ProducesValidationProblem();
 
-        app.MapPut("/api/people/{id:guid}", UpdateAsync)
-            .WithName("UpdatePerson")
+        app.MapPut("/api/products/{id:guid}", UpdateAsync)
+            .WithName("UpdateProduct")
             .Produces(StatusCodes.Status204NoContent)
             .Produces(StatusCodes.Status404NotFound)
             .ProducesValidationProblem();
 
-        app.MapDelete("/api/people/{id:guid}", DeleteAsync)
-            .WithName("DeletePerson")
+        app.MapDelete("/api/products/{id:guid}", DeleteAsync)
+            .WithName("DeleteProduct")
             .Produces(StatusCodes.Status204NoContent)
             .Produces(StatusCodes.Status404NotFound);
     }
@@ -46,55 +46,53 @@ public class ProductsHandler
             query = query.Where(p => p.Name.Contains(searchText));
         }
 
-        var people = await query.OrderBy(p => p.Name)
+        var products = await query.OrderBy(p => p.Name)
             .Select(p => p.ToDto()).ToListAsync();
 
-        return Results.Ok(people);
+        return Results.Ok(products);
     }
 
     private async Task<IResult> GetAsync(Guid id, DataContext dataContext)
     {
-        var dbPerson = await dataContext.People.FindAsync(id);
-        if (dbPerson is null)
+        var dbProduct = await dataContext.Products.FindAsync(id);
+        if (dbProduct is null)
         {
             return Results.NotFound();
         }
 
-        var person = dbPerson.ToDto();
+        var person = dbProduct.ToDto();
         return Results.Ok(person);
     }
 
-    private async Task<IResult> InsertAsync(Person person, DataContext dataContext)
+    private async Task<IResult> InsertAsync(Product product, DataContext dataContext)
     {
-        var dbPerson = new Entities.Person
+        var dbProduct = new Entities.Product
         {
-            FirstName = person.FirstName,
-            LastName = person.LastName,
-            City = person.City,
+            Name = product.Name,
+            Price = product.Price
         };
 
-        dataContext.People.Add(dbPerson);
+        dataContext.Products.Add(dbProduct);
         await dataContext.SaveChangesAsync();
 
-        return Results.CreatedAtRoute("GetPerson", new { dbPerson.Id }, dbPerson.ToDto());
+        return Results.CreatedAtRoute("GetProduct", new { dbProduct.Id }, dbProduct.ToDto());
     }
 
-    private async Task<IResult> UpdateAsync(Guid id, Person person, DataContext dataContext)
+    private async Task<IResult> UpdateAsync(Guid id, Product product, DataContext dataContext)
     {
-        if (id != person.Id)
+        if (id != product.Id)
         {
             return Results.BadRequest();
         }
 
-        var dbPerson = await dataContext.People.FindAsync(id);
-        if (dbPerson is null)
+        var dbProduct = await dataContext.Products.FindAsync(id);
+        if (dbProduct is null)
         {
             return Results.NotFound();
         }
 
-        dbPerson.FirstName = person.FirstName;
-        dbPerson.LastName = person.LastName;
-        dbPerson.City = person.City;
+        dbProduct.Name = product.Name;
+        dbProduct.Price = product.Price;
 
         await dataContext.SaveChangesAsync();
 
@@ -103,13 +101,13 @@ public class ProductsHandler
 
     private async Task<IResult> DeleteAsync(Guid id, DataContext dataContext)
     {
-        var dbPerson = await dataContext.People.FindAsync(id);
-        if (dbPerson is null)
+        var dbProduct = await dataContext.Products.FindAsync(id);
+        if (dbProduct is null)
         {
             return Results.NotFound();
         }
 
-        dataContext.People.Remove(dbPerson);
+        dataContext.Products.Remove(dbProduct);
         await dataContext.SaveChangesAsync();
 
         return Results.NoContent();
