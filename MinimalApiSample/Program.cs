@@ -65,14 +65,58 @@ app.MapPost("/api/people", async (Person person, DataContext dataContext) =>
         LastName = person.LastName,
         City = person.City,
     };
+
     dataContext.People.Add(dbPerson);
     await dataContext.SaveChangesAsync();
 
-    return Results.CreatedAtRoute("GetPerson", new { Id = dbPerson.Id }, dbPerson.ToDto());
+    return Results.CreatedAtRoute("GetPerson", new { dbPerson.Id }, dbPerson.ToDto());
 })
 .WithName("InsertPerson")
 .Produces(StatusCodes.Status201Created, typeof(Person))
 .ProducesValidationProblem();
+
+app.MapPut("/api/people/{id:guid}", async (Guid id, Person person, DataContext dataContext) =>
+{
+    if (id != person.Id)
+    {
+        return Results.BadRequest();
+    }
+
+    var dbPerson = await dataContext.People.FindAsync(id);
+    if (dbPerson is null)
+    {
+        return Results.NotFound();
+    }
+
+    dbPerson.FirstName = person.FirstName;
+    dbPerson.LastName = person.LastName;
+    dbPerson.City = person.City;
+
+    await dataContext.SaveChangesAsync();
+
+    return Results.NoContent();
+})
+.WithName("UpdatePerson")
+.Produces(StatusCodes.Status204NoContent)
+.Produces(StatusCodes.Status404NotFound)
+.ProducesValidationProblem();
+
+app.MapDelete("/api/people/{id:guid}", async (Guid id, DataContext dataContext) =>
+{
+    var dbPerson = await dataContext.People.FindAsync(id);
+    if (dbPerson is null)
+    {
+        return Results.NotFound();
+    }
+
+    dataContext.People.Remove(dbPerson);
+    await dataContext.SaveChangesAsync();
+
+    return Results.NoContent();
+})
+.WithName("DeletePerson")
+.Produces(StatusCodes.Status204NoContent)
+.Produces(StatusCodes.Status404NotFound);
 
 app.Run();
 
