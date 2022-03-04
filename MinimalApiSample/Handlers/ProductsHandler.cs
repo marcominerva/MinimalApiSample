@@ -7,7 +7,7 @@ using Entities = MinimalApiSample.DataAccessLayer.Entities;
 
 namespace MinimalApiSample.Handlers;
 
-public class PeopleHandler
+public class ProductsHandler
 {
     public void MapEndpoints(IEndpointRouteBuilder app)
     {
@@ -39,14 +39,14 @@ public class PeopleHandler
 
     private async Task<IResult> GetListAsync([FromQuery(Name = "q")] string searchText, DataContext dataContext)
     {
-        var query = dataContext.People.AsNoTracking().AsQueryable();
+        var query = dataContext.Products.AsNoTracking().AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(searchText))
         {
-            query = query.Where(p => p.FirstName.Contains(searchText) || p.LastName.Contains(searchText));
+            query = query.Where(p => p.Name.Contains(searchText));
         }
 
-        var people = await query.OrderBy(p => p.FirstName).ThenBy(p => p.LastName)
+        var people = await query.OrderBy(p => p.Name)
             .Select(p => p.ToDto()).ToListAsync();
 
         return Results.Ok(people);
