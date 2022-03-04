@@ -27,7 +27,7 @@ app.UseHttpsRedirection();
 
 app.MapGet("/api/people", async ([FromQueryAttribute(Name = "q")] string searchText, DataContext dataContext) =>
 {
-    var query = dataContext.People.AsQueryable();
+    var query = dataContext.People.AsNoTracking().AsQueryable();
 
     if (!string.IsNullOrWhiteSpace(searchText))
     {
@@ -109,12 +109,79 @@ app.MapDelete("/api/people/{id:guid}", async (Guid id, DataContext dataContext) 
         return Results.NotFound();
     }
 
-    dataContext.People.Remove(dbPerson);
+    dbPerson.Photo = null;
     await dataContext.SaveChangesAsync();
 
     return Results.NoContent();
 })
 .WithName("DeletePerson")
+.Produces(StatusCodes.Status204NoContent)
+.Produces(StatusCodes.Status404NotFound);
+
+app.MapGet("/api/people/{id:guid}/photo", async (Guid id, DataContext dataContext) =>
+{
+    var dbPerson = await dataContext.People.FindAsync(id);
+    if (dbPerson?.Photo is null)
+    {
+        return Results.NotFound();
+    }
+
+    return Results.Bytes(dbPerson.Photo, "image/jpeg");
+})
+.WithName("GetPhoto")
+.Produces(StatusCodes.Status200OK, contentType: "image/jpeg")
+.Produces(StatusCodes.Status400BadRequest, typeof(ProblemDetails))
+.Produces(StatusCodes.Status404NotFound, typeof(ProblemDetails));
+
+app.MapPut("/api/people/{id:guid}/photo", async (Guid id, HttpRequest request, DataContext dataContext) =>
+{
+    if (!request.HasFormContentType)
+    {
+        return Results.BadRequest();
+    }
+
+    var form = await request.ReadFormAsync();
+    var file = form.Files.FirstOrDefault();
+
+    if (file is null)
+    {
+        return Results.BadRequest();
+    }
+
+    var dbPerson = await dataContext.People.FindAsync(id);
+    if (dbPerson is null)
+    {
+        return Results.NotFound();
+    }
+
+    using var stream = file.OpenReadStream();
+    using var photoStream = new MemoryStream();
+    await stream.CopyToAsync(photoStream);
+
+    dbPerson.Photo = photoStream.ToArray();
+    await dataContext.SaveChangesAsync();
+
+    return Results.NoContent();
+})
+.WithName("UpdatePhoto")
+.Produces(StatusCodes.Status204NoContent)
+.Produces(StatusCodes.Status400BadRequest)
+.Produces(StatusCodes.Status404NotFound);
+
+app.MapDelete("/api/people/{id:guid}/photo", async (Guid id, DataContext dataContext) =>
+{
+    var dbPerson = await dataContext.People.FindAsync(id);
+    if (dbPerson is null)
+    {
+        return Results.NotFound();
+    }
+
+    dataContext.People.Remove(dbPerson);
+    await dataContext.SaveChangesAsync();
+
+    return Results.NoContent();
+})
+.WithName("DeletePhoto")
 .Produces(StatusCodes.Status204NoContent)
 .Produces(StatusCodes.Status404NotFound);
 
