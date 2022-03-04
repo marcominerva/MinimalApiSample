@@ -1,9 +1,11 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using MinimalApiSample.Binding;
 using MinimalApiSample.DataAccessLayer;
+using MinimalApiSample.Routing;
 
 namespace MinimalApiSample.Handlers;
 
-public class PeoplePhotoHandler
+public class PeoplePhotoHandler : IEndpointRouteHandler
 {
     public void MapEndpoints(IEndpointRouteBuilder app)
     {
@@ -15,6 +17,7 @@ public class PeoplePhotoHandler
 
         app.MapPut("/api/people/{id:guid}/photo", UpdatePhotoAsync)
             .WithName("UpdatePhoto")
+            .Accepts<FormFileContent>("multipart/form-data")
             .Produces(StatusCodes.Status204NoContent)
             .Produces(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status404NotFound);
@@ -36,28 +39,15 @@ public class PeoplePhotoHandler
         return Results.Bytes(dbPerson.Photo, "image/jpeg");
     }
 
-    private async Task<IResult> UpdatePhotoAsync(Guid id, HttpRequest request, DataContext dataContext)
+    private async Task<IResult> UpdatePhotoAsync(Guid id, FormFileContent fileContent, DataContext dataContext)
     {
-        if (!request.HasFormContentType)
-        {
-            return Results.BadRequest();
-        }
-
-        var form = await request.ReadFormAsync();
-        var file = form.Files.FirstOrDefault();
-
-        if (file is null)
-        {
-            return Results.BadRequest();
-        }
-
         var dbPerson = await dataContext.People.FindAsync(id);
         if (dbPerson is null)
         {
             return Results.NotFound();
         }
 
-        using var stream = file.OpenReadStream();
+        using var stream = fileContent.Content.OpenReadStream();
         using var photoStream = new MemoryStream();
         await stream.CopyToAsync(photoStream);
 
