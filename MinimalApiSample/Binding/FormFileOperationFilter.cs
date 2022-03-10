@@ -1,12 +1,7 @@
-﻿using Microsoft.AspNetCore.Http.Metadata;
-using Microsoft.OpenApi.Models;
-using Swashbuckle.AspNetCore.SwaggerGen;
-
-namespace MinimalApiSample.Binding;
+﻿namespace MinimalApiSample.Binding;
 
 public class FormFileOperationFilter : IOperationFilter
 {
-    /// <inheritdoc />
     public void Apply(OpenApiOperation operation, OperationFilterContext context)
     {
         var acceptsFormFile = context.ApiDescription.ActionDescriptor.EndpointMetadata.OfType<IAcceptsMetadata>()
