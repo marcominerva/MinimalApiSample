@@ -1,4 +1,8 @@
-﻿namespace MinimalApiSample.Binding;
+﻿using Microsoft.AspNetCore.Http.Metadata;
+using Microsoft.OpenApi.Models;
+using Swashbuckle.AspNetCore.SwaggerGen;
+
+namespace MinimalApiSample.Binding;
 
 public class FormFileOperationFilter : IOperationFilter
 {
