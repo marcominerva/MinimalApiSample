@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MinimalApiSample.DataAccessLayer;
 using MinimalApiSample.Extensions;
+using MinimalApiSample.Filters;
 using MinimalApiSample.Models;
 using MinimalApiSample.Routing;
 using Entities = MinimalApiSample.DataAccessLayer.Entities;
@@ -24,6 +25,7 @@ public class PeopleHandler : IEndpointRouteHandler
 
         app.MapPost("/api/people", InsertAsync)
             .WithName("InsertPerson")
+            .AddFilter<ValidatorFilter<Person>>()
             .Produces(StatusCodes.Status201Created, typeof(Person))
             .ProducesValidationProblem();
 
@@ -66,22 +68,8 @@ public class PeopleHandler : IEndpointRouteHandler
         return Results.Ok(person);
     }
 
-    private async Task<IResult> InsertAsync(Person person, DataContext dataContext, IValidator<Person> validator)
+    private async Task<IResult> InsertAsync(Person person, DataContext dataContext)
     {
-        //if (!MiniValidator.TryValidate(person, out var errors))
-        //{
-        //    return Results.ValidationProblem(errors);
-        //}
-
-        var validationResult = validator.Validate(person);
-        if (!validationResult.IsValid)
-        {
-            var errors = validationResult.Errors.GroupBy(e => e.PropertyName)
-                .ToDictionary(k => k.Key, v => v.Select(e => e.ErrorMessage).ToArray());
-
-            return Results.ValidationProblem(errors);
-        }
-
         var dbPerson = new Entities.Person
         {
             FirstName = person.FirstName,
