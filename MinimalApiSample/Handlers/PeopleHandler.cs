@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using MinimalApiSample.DataAccessLayer;
 using MinimalApiSample.Extensions;
 using MinimalApiSample.Models;
-using MinimalApiSample.Routing;
+using MinimalHelpers.Routing;
 using Entities = MinimalApiSample.DataAccessLayer.Entities;
 
 namespace MinimalApiSample.Handlers;

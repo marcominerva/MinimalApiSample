@@ -1,8 +1,8 @@
 using FluentValidation.AspNetCore;
 using Microsoft.EntityFrameworkCore;
-using MinimalApiSample.Binding;
 using MinimalApiSample.DataAccessLayer;
-using MinimalApiSample.Routing;
+using MinimalHelpers.Binding;
+using MinimalHelpers.Routing;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,7 +10,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
-    options.OperationFilter<FormFileOperationFilter>();
+    options.AddFormFile();
 });
 
 builder.Services.AddFluentValidation(options => options.RegisterValidatorsFromAssemblyContaining<Program>());

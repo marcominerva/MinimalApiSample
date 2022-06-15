@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using MinimalApiSample.Binding;
 using MinimalApiSample.DataAccessLayer;
-using MinimalApiSample.Routing;
+using MinimalHelpers.Binding;
+using MinimalHelpers.Routing;
 
 namespace MinimalApiSample.Handlers;
 
