@@ -154,15 +154,15 @@ app.MapDelete("/api/people/{id:guid}", async (Guid id, DataContext dataContext) 
 .Produces(StatusCodes.Status404NotFound);
 
 app.MapGet("/api/people/{id:guid}/photo", async (Guid id, DataContext dataContext) =>
+{
+    var dbPerson = await dataContext.People.FindAsync(id);
+    if (dbPerson?.Photo is null)
     {
-        var dbPerson = await dataContext.People.FindAsync(id);
-        if (dbPerson?.Photo is null)
-        {
-            return Results.NotFound();
-        }
+        return Results.NotFound();
+    }
 
-        return Results.Bytes(dbPerson.Photo, "image/jpeg");
-    })
+    return Results.Bytes(dbPerson.Photo, "image/jpeg");
+})
 .WithName("GetPhoto")
 .Produces(StatusCodes.Status200OK, contentType: "image/jpeg")
 .Produces(StatusCodes.Status400BadRequest, typeof(ProblemDetails))
