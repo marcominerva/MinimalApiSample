@@ -186,7 +186,6 @@ app.MapPut("/api/people/{id:guid}/photo", async (Guid id, IFormFile file, DataCo
     return Results.NoContent();
 })
 .WithName("UpdatePhoto")
-.Accepts<IFormFile>("multipart/form-data")
 .Produces(StatusCodes.Status204NoContent)
 .Produces(StatusCodes.Status400BadRequest)
 .Produces(StatusCodes.Status404NotFound);
