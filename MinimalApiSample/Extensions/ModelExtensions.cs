@@ -13,12 +13,4 @@ public static class ModelExtensions
             LastName = person.LastName,
             City = person.City,
         };
-
-    public static Product ToDto(this Entities.Product product)
-        => new()
-        {
-            Id = product.Id,
-            Name = product.Name,
-            Price = product.Price
-        };
 }

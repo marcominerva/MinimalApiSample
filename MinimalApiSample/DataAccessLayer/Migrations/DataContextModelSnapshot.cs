@@ -8,7 +8,7 @@ using MinimalApiSample.DataAccessLayer;
 
 #nullable disable
 
-namespace MinimalApiSample.DataAccessLayer.Migrations
+namespace MinimalApiSample.Migrations
 {
     [DbContext(typeof(DataContext))]
     partial class DataContextModelSnapshot : ModelSnapshot
@@ -17,7 +17,7 @@ namespace MinimalApiSample.DataAccessLayer.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "6.0.2")
+                .HasAnnotation("ProductVersion", "6.0.11")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder, 1L, 1);
@@ -51,26 +51,6 @@ namespace MinimalApiSample.DataAccessLayer.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("People", (string)null);
-                });
-
-            modelBuilder.Entity("MinimalApiSample.DataAccessLayer.Entities.Product", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .IsUnicode(false)
-                        .HasColumnType("varchar(50)");
-
-                    b.Property<double>("Price")
-                        .HasColumnType("float");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Products", (string)null);
                 });
 #pragma warning restore 612, 618
         }

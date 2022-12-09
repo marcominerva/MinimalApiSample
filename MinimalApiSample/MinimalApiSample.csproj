@@ -12,8 +12,6 @@
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
-		<PackageReference Include="MinimalHelpers.Binding" Version="1.0.19" />
-		<PackageReference Include="MinimalHelpers.Routing" Version="1.0.14" />
 		<PackageReference Include="MiniValidation" Version="0.7.0" />
 		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
 	</ItemGroup>
