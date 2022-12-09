@@ -1,12 +1,13 @@
-using Microsoft.EntityFrameworkCore;
-using MinimalApiSample.DataAccessLayer;
-using MinimalApiSample.Handlers;
-
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.AddFormFile();
+});
+
+builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
 builder.Services.AddSqlServer<DataContext>(builder.Configuration.GetConnectionString("SqlConnection"));
 
