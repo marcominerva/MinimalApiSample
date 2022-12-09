@@ -1,3 +1,9 @@
+using FluentValidation;
+using Microsoft.EntityFrameworkCore;
+using MinimalApiSample.DataAccessLayer;
+using MinimalHelpers.Binding;
+using MinimalHelpers.Routing;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -7,7 +13,7 @@ builder.Services.AddSwaggerGen(options =>
     options.AddFormFile();
 });
 
-builder.Services.AddFluentValidation(options => options.RegisterValidatorsFromAssemblyContaining<Program>());
+builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
 builder.Services.AddSqlServer<DataContext>(builder.Configuration.GetConnectionString("SqlConnection"));
 
