@@ -7,7 +7,7 @@ builder.Services.AddSwaggerGen(options =>
     options.AddFormFile();
 });
 
-builder.Services.AddValidatorsFromAssemblyContaining<Program>();
+builder.Services.AddFluentValidation(options => options.RegisterValidatorsFromAssemblyContaining<Program>());
 
 builder.Services.AddSqlServer<DataContext>(builder.Configuration.GetConnectionString("SqlConnection"));
 
@@ -23,14 +23,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-var peopleHandler = new PeopleHandler();
-peopleHandler.MapEndpoints(app);
-
-var peoplePhotoHandler = new PeoplePhotoHandler();
-peoplePhotoHandler.MapEndpoints(app);
-
-var productsHandler = new ProductsHandler();
-productsHandler.MapEndpoints(app);
+app.MapEndpoints();
 
 app.Run();
 
