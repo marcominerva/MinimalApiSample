@@ -1,12 +1,19 @@
+using FluentValidation.AspNetCore;
 using Microsoft.EntityFrameworkCore;
 using MinimalApiSample.DataAccessLayer;
-using MinimalApiSample.Handlers;
+using MinimalHelpers.Binding;
+using MinimalHelpers.Routing;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.AddFormFile();
+});
+
+builder.Services.AddFluentValidation(options => options.RegisterValidatorsFromAssemblyContaining<Program>());
 
 builder.Services.AddSqlServer<DataContext>(builder.Configuration.GetConnectionString("SqlConnection"));
 
@@ -22,14 +29,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-var peopleHandler = new PeopleHandler();
-peopleHandler.MapEndpoints(app);
-
-var peoplePhotoHandler = new PeoplePhotoHandler();
-peoplePhotoHandler.MapEndpoints(app);
-
-var productsHandler = new ProductsHandler();
-productsHandler.MapEndpoints(app);
+app.MapEndpoints();
 
 app.Run();
 
