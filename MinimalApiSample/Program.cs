@@ -1,9 +1,12 @@
+using System.Net.Mime;
 using FluentValidation;
-using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 using MinimalApiSample.DataAccessLayer;
 using MinimalApiSample.Extensions;
+using MinimalApiSample.Filters;
 using MinimalApiSample.Models;
+using MinimalApiSample.Parameters;
 using Entities = MinimalApiSample.DataAccessLayer.Entities;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -28,61 +31,65 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.MapGet("/api/people", async (string firstName, string lastName, string city, DataContext dataContext) =>
+var peopleApiGroup = app.MapGroup("/api/people");
+
+peopleApiGroup.MapGet("", async ([AsParameters] SearchPeopleRequest request, DataContext dataContext) =>
 {
     var query = dataContext.People.AsNoTracking().AsQueryable();
 
-    if (!string.IsNullOrWhiteSpace(firstName))
+    if (!string.IsNullOrWhiteSpace(request.FirstName))
     {
-        query = query.Where(p => p.FirstName.Contains(firstName));
+        query = query.Where(p => p.FirstName.Contains(request.FirstName));
     }
 
-    if (!string.IsNullOrWhiteSpace(lastName))
+    if (!string.IsNullOrWhiteSpace(request.LastName))
     {
-        query = query.Where(p => p.LastName.Contains(lastName));
+        query = query.Where(p => p.LastName.Contains(request.LastName));
     }
 
-    if (!string.IsNullOrWhiteSpace(city))
+    if (!string.IsNullOrWhiteSpace(request.City))
     {
-        query = query.Where(p => p.City.Contains(city));
+        query = query.Where(p => p.City.Contains(request.City));
     }
 
     var people = await query.OrderBy(p => p.FirstName).ThenBy(p => p.LastName)
         .Select(p => p.ToDto()).ToListAsync();
 
-    return Results.Ok(people);
+    return TypedResults.Ok(people);
 })
 .WithName("GetPeople")
-.Produces(StatusCodes.Status200OK, typeof(IEnumerable<Person>));
-
-app.MapGet("/api/people/{id:guid}", async (Guid id, DataContext dataContext) =>
+.AddEndpointFilter(async (context, next) =>
 {
-    var dbPerson = await dataContext.People.FindAsync(id);
+    Console.WriteLine("Executing...");
+
+    var result = await next(context);
+
+    Console.WriteLine("Executed.");
+
+    return result;
+})
+.WithOpenApi(operation =>
+{
+    operation.Summary = "Retrieves a list of people";
+    operation.Description = "The list can be filtered by first name, last name and city";
+    return operation;
+});
+
+peopleApiGroup.MapGet("{id:guid}", async Task<Results<Ok<Person>, NotFound>> ([AsParameters] SinglePersonRequest request) =>
+{
+    var dbPerson = await request.DataContext.People.FindAsync(request.Id);
     if (dbPerson is null)
     {
-        return Results.NotFound();
+        return TypedResults.NotFound();
     }
 
     var person = dbPerson.ToDto();
-    return Results.Ok(person);
+    return TypedResults.Ok(person);
 })
-.WithName("GetPerson")
-.Produces(StatusCodes.Status200OK, typeof(Person))
-.Produces(StatusCodes.Status404NotFound);
+.WithName("GetPerson");
 
-app.MapPost("/api/people", async (Person person, DataContext dataContext, IValidator<Person> validator) =>
+peopleApiGroup.MapPost("", async Task<Results<CreatedAtRoute<Person>, BadRequest, ValidationProblem>> (Person person, DataContext dataContext) =>
 {
-    //if (!MiniValidator.TryValidate(person, out var errors))
-    //{
-    //    return Results.ValidationProblem(errors);
-    //}
-
-    var validationResult = await validator.ValidateAsync(person);
-    if (!validationResult.IsValid)
-    {
-        return Results.ValidationProblem(validationResult.ToDictionary());
-    }
-
     var dbPerson = new Entities.Person
     {
         FirstName = person.FirstName,
@@ -93,34 +100,22 @@ app.MapPost("/api/people", async (Person person, DataContext dataContext, IValid
     dataContext.People.Add(dbPerson);
     await dataContext.SaveChangesAsync();
 
-    return Results.CreatedAtRoute("GetPerson", new { dbPerson.Id }, dbPerson.ToDto());
+    return TypedResults.CreatedAtRoute(dbPerson.ToDto(), "GetPerson", new { dbPerson.Id });
 })
 .WithName("InsertPerson")
-.Produces(StatusCodes.Status201Created, typeof(Person))
-.ProducesValidationProblem();
+.AddEndpointFilter<ValidatorFilter<Person>>();
 
-app.MapPut("/api/people/{id:guid}", async (Guid id, Person person, DataContext dataContext, IValidator<Person> validator) =>
+peopleApiGroup.MapPut("{id:guid}", async Task<Results<NoContent, NotFound, BadRequest, ValidationProblem>> (Guid id, Person person, DataContext dataContext) =>
 {
-    //if (!MiniValidator.TryValidate(person, out var errors))
-    //{
-    //    return Results.ValidationProblem(errors);
-    //}
-
-    var validationResult = await validator.ValidateAsync(person);
-    if (!validationResult.IsValid)
-    {
-        return Results.ValidationProblem(validationResult.ToDictionary());
-    }
-
     if (id != person.Id)
     {
-        return Results.BadRequest();
+        return TypedResults.BadRequest();
     }
 
     var dbPerson = await dataContext.People.FindAsync(id);
     if (dbPerson is null)
     {
-        return Results.NotFound();
+        return TypedResults.NotFound();
     }
 
     dbPerson.FirstName = person.FirstName;
@@ -129,51 +124,45 @@ app.MapPut("/api/people/{id:guid}", async (Guid id, Person person, DataContext d
 
     await dataContext.SaveChangesAsync();
 
-    return Results.NoContent();
+    return TypedResults.NoContent();
 })
 .WithName("UpdatePerson")
-.Produces(StatusCodes.Status204NoContent)
-.Produces(StatusCodes.Status404NotFound)
-.ProducesValidationProblem();
+.AddEndpointFilter<ValidatorFilter<Person>>();
 
-app.MapDelete("/api/people/{id:guid}", async (Guid id, DataContext dataContext) =>
+peopleApiGroup.MapDelete("{id:guid}", async Task<Results<NoContent, NotFound>> ([AsParameters] SinglePersonRequest request) =>
 {
-    var dbPerson = await dataContext.People.FindAsync(id);
+    var dbPerson = await request.DataContext.People.FindAsync(request.Id);
     if (dbPerson is null)
     {
-        return Results.NotFound();
+        return TypedResults.NotFound();
     }
 
-    dataContext.People.Remove(dbPerson);
-    await dataContext.SaveChangesAsync();
+    request.DataContext.People.Remove(dbPerson);
+    await request.DataContext.SaveChangesAsync();
 
-    return Results.NoContent();
+    return TypedResults.NoContent();
 })
-.WithName("DeletePerson")
-.Produces(StatusCodes.Status204NoContent)
-.Produces(StatusCodes.Status404NotFound);
+.WithName("DeletePerson");
 
-app.MapGet("/api/people/{id:guid}/photo", async (Guid id, DataContext dataContext) =>
+peopleApiGroup.MapGet("{id:guid}/photo", async Task<Results<FileContentHttpResult, NotFound>> (Guid id, DataContext dataContext) =>
 {
     var dbPerson = await dataContext.People.FindAsync(id);
     if (dbPerson?.Photo is null)
     {
-        return Results.NotFound();
+        return TypedResults.NotFound();
     }
 
-    return Results.Bytes(dbPerson.Photo, "image/jpeg");
+    return TypedResults.Bytes(dbPerson.Photo, "image/jpeg");
 })
 .WithName("GetPhoto")
-.Produces(StatusCodes.Status200OK, contentType: "image/jpeg")
-.Produces(StatusCodes.Status400BadRequest, typeof(ProblemDetails))
-.Produces(StatusCodes.Status404NotFound, typeof(ProblemDetails));
+.Produces(StatusCodes.Status200OK, contentType: MediaTypeNames.Image.Jpeg);
 
-app.MapPut("/api/people/{id:guid}/photo", async (Guid id, IFormFile file, DataContext dataContext) =>
+peopleApiGroup.MapPut("{id:guid}/photo", async Task<Results<NoContent, NotFound>> ([AsParameters] SinglePersonRequest request, IFormFile file) =>
 {
-    var dbPerson = await dataContext.People.FindAsync(id);
+    var dbPerson = await request.DataContext.People.FindAsync(request.Id);
     if (dbPerson is null)
     {
-        return Results.NotFound();
+        return TypedResults.NotFound();
     }
 
     using var stream = file.OpenReadStream();
@@ -181,31 +170,26 @@ app.MapPut("/api/people/{id:guid}/photo", async (Guid id, IFormFile file, DataCo
     await stream.CopyToAsync(photoStream);
 
     dbPerson.Photo = photoStream.ToArray();
-    await dataContext.SaveChangesAsync();
+    await request.DataContext.SaveChangesAsync();
 
-    return Results.NoContent();
+    return TypedResults.NoContent();
 })
-.WithName("UpdatePhoto")
-.Produces(StatusCodes.Status204NoContent)
-.Produces(StatusCodes.Status400BadRequest)
-.Produces(StatusCodes.Status404NotFound);
+.WithName("UpdatePhoto");
 
-app.MapDelete("/api/people/{id:guid}/photo", async (Guid id, DataContext dataContext) =>
+peopleApiGroup.MapDelete("{id:guid}/photo", async Task<Results<NoContent, NotFound>> ([AsParameters] SinglePersonRequest request) =>
 {
-    var dbPerson = await dataContext.People.FindAsync(id);
+    var dbPerson = await request.DataContext.People.FindAsync(request.Id);
     if (dbPerson is null)
     {
-        return Results.NotFound();
+        return TypedResults.NotFound();
     }
 
     dbPerson.Photo = null;
-    await dataContext.SaveChangesAsync();
+    await request.DataContext.SaveChangesAsync();
 
-    return Results.NoContent();
+    return TypedResults.NoContent();
 })
-.WithName("DeletePhoto")
-.Produces(StatusCodes.Status204NoContent)
-.Produces(StatusCodes.Status404NotFound);
+.WithName("DeletePhoto");
 
 app.Run();
 
