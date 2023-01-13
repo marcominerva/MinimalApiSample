@@ -1,4 +1,4 @@
-﻿namespace MinimalApiSample.Parameters;
+﻿namespace MinimalApiSample.Requests;
 
 public class SearchPeopleRequest
 {

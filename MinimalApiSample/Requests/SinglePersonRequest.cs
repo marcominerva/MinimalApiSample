@@ -1,6 +1,6 @@
 ﻿using MinimalApiSample.DataAccessLayer;
 
-namespace MinimalApiSample.Parameters;
+namespace MinimalApiSample.Requests;
 
 public class SinglePersonRequest
 {

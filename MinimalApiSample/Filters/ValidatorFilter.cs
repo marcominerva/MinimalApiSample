@@ -13,18 +13,22 @@ public class ValidatorFilter<T> : IEndpointFilter where T : class
 
     public async ValueTask<object> InvokeAsync(EndpointFilterInvocationContext context, EndpointFilterDelegate next)
     {
-        var input = context.Arguments.FirstOrDefault(a => a.GetType() == typeof(T)) as T;
-        if (input is null)
+        if (context.Arguments.FirstOrDefault(a => a.GetType() == typeof(T)) is T input)
         {
-            return TypedResults.BadRequest();
+            //if (!MiniValidator.TryValidate(input, out var errors))
+            //{
+            //    return Results.ValidationProblem(errors);
+            //}
+
+            var validationResult = await validator.ValidateAsync(input);
+            if (!validationResult.IsValid)
+            {
+                return TypedResults.ValidationProblem(validationResult.ToDictionary());
+            }
+
+            return await next(context);
         }
 
-        var validationResult = await validator.ValidateAsync(input);
-        if (!validationResult.IsValid)
-        {
-            return TypedResults.ValidationProblem(validationResult.ToDictionary());
-        }
-
-        return await next(context);
+        return TypedResults.BadRequest();
     }
 }
