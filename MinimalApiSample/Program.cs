@@ -73,12 +73,6 @@ peopleApiGroup.MapGet("", async ([AsParameters] SearchPeopleRequest request, Dat
     Console.WriteLine("Executed.");
 
     return result;
-})
-.WithOpenApi(operation =>
-{
-    operation.Summary = "Retrieves a list of people";
-    operation.Description = "The list can be filtered by first name, last name and city";
-    return operation;
 });
 
 peopleApiGroup.MapGet("{id:guid}", async Task<Results<Ok<Person>, NotFound>> ([AsParameters] SinglePersonRequest request) =>
