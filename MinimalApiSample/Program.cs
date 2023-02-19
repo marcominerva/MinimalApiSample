@@ -40,8 +40,6 @@ await ConfigureDatabaseAsync(app.Services);
 // Configure the HTTP request pipeline.
 app.UseHttpsRedirection();
 
-app.UseStatusCodePages();
-
 if (!app.Environment.IsDevelopment())
 {
     // Error handling
@@ -83,6 +81,8 @@ if (!app.Environment.IsDevelopment())
         }
     });
 }
+
+app.UseStatusCodePages();
 
 app.UseSwagger();
 app.UseSwaggerUI();
